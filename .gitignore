@@ -1,0 +1,10 @@
+# Each of these is its own independent git repo with its own GitHub remote.
+# Keep them out of the root repo entirely so they aren't tracked as nested
+# content here.
+ipilgo-tourist/
+ipilgo-owner/
+ipilgo-admin/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
