@@ -5,6 +5,7 @@ ipilgo-tourist/
 ipilgo-owner/
 ipilgo-admin/
 ipilgo-apps/
+release-files/
 
 # OS / editor noise
 .DS_Store
