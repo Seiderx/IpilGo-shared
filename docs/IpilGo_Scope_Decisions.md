@@ -26,7 +26,7 @@ Places with no owner (plaza, church, public beach) are managed by the **admin**.
 
 ---
 
-## Tourist app — backlog (in build order)
+## Tourist app — backlog (in build order) — items 1-6 DONE 2026-10-11
 
 1. **Password rules**: min 8 characters, must contain letters and numbers, block common passwords
    (e.g. `12345678`, `password1`), strength meter while typing. Enforced in Supabase Auth
@@ -47,7 +47,7 @@ Places with no owner (plaza, church, public beach) are managed by the **admin**.
 
 ---
 
-## Owner app — features (every owner, any place type)
+## Owner app — features (every owner, any place type) — DONE 2026-10-11
 
 Purpose: keep listing information fresh, because the AI agents are only as good as the data.
 
@@ -73,6 +73,13 @@ Hotel owners: set "rooms from PHP X" and a booking link. No room management.
 Restaurant owners: featured dishes as photos with price. No ordering.
 
 ---
+
+## Also built (2026-10-11)
+
+- Forgot password in all three apps uses the same 6-digit code -> new-password form flow
+  (no reset links). Owner app gained a Forgot Password screen; admin Profile password change
+  now needs the email code too.
+- Booking form asks for contact name + mobile number (shown to the owner/guide).
 
 ## Open questions
 
