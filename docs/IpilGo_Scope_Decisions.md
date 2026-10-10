@@ -59,6 +59,13 @@ Purpose: keep listing information fresh, because the AI agents are only as good 
 | Read and **reply to reviews** | Feedback |
 | Stats: views, saves, times recommended | — (owner value) |
 
+Account features shared with the tourist app (same behavior, built once, reused):
+- Password rules (Supabase Auth setting applies to all three apps automatically).
+- Change password via email code; hidden for Google/Facebook accounts.
+- Avatar / business logo upload.
+- **Keeps real full name + business name** (not username): admin approves owners, so identity must be checkable.
+- Change email: dropped, same as tourist.
+
 Owners of **guided spots** additionally: manage guides, accept/decline bookings
 (existing Requests and History tabs).
 
