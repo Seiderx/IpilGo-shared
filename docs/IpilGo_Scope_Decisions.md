@@ -87,3 +87,25 @@ Restaurant owners: featured dishes as photos with price. No ordering.
   employees — **to confirm**. If true, guide booking may belong to the tourism office (admin side)
   rather than to spot owners, which changes who accepts bookings. Do not change booking ownership
   until confirmed.
+
+---
+
+## Round 2 — fixes from v1.1.0 testing (agreed 2026-10-11, build in this order)
+
+1. Tourist bug fixes: profiling re-asked after a failed load; avatar upload permission; duplicate
+   Get Directions; Log In/Sign Up share fields + wrong autofill; "invalid or expired" code
+   message; places with no category hidden from lists.
+2. Owner fixes: overlapping dashboard cards; full name letters only; autofill/leftover fields;
+   category dropdown; guided-tours switch not saving; stale "pending review" status;
+   Requests/History tabs only for spots with guided tours; red badge with pending count.
+3. Username rules: start with a letter, ≥3 letters, letters/numbers/._ only, no doubled or
+   trailing separators, no char repeated 4+ times.
+4. Phone number on tourist Profile; booking prefills it and saves it back.
+5. Chat assistant: refuses non-Ipil topics, gives real address + directions, faster replies.
+6. Owner account deleted → their spot auto-hidden (pending) for admin to reassign/delete.
+   Duplicate Front yard: hide the ownerless one; merge/delete only with user's OK.
+7. One account can be tourist AND owner (owners use the tourist app; tourists can apply as owner).
+8. In-app notifications: booking approved/rejected, spot approved, owner approved.
+9. Phone push notifications (needs user's free Firebase project).
+10. Email to owner when approved (after step 5 dedicated sender Gmail exists).
+Then: rebuild v1.1.1, pre-release, user tests everything together.
