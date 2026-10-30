@@ -39,7 +39,8 @@ Deno.serve(async (req: Request) => {
   const { data: booking, error } = await supabase
     .from("bookings")
     .select(
-      "id, total_amount, amount_due_now, amount_paid, deposit_amount, payment_status, status, destinations(name)",
+      "id, total_amount, amount_due_now, amount_paid, deposit_amount, payment_status, status, " +
+        "booking_date, num_guests, contact_name, contact_phone, created_at, destinations(name)",
     )
     .eq("id", booking_id)
     .maybeSingle();
@@ -81,6 +82,25 @@ Deno.serve(async (req: Request) => {
 
   const destName = (booking as any).destinations?.name ?? "IpilGo destination";
   const label = kind === "deposit" ? "Down payment" : kind === "balance" ? "Remaining balance" : "Booking";
+  // What the tourist reads on PayMongo's page: the trip, not a database id.
+  // Same reference the apps show (bookingCode in tourist/owner).
+  const ref = `IPG-${new Date(booking.created_at).getFullYear()}-` +
+    booking.id.replace(/-/g, "").slice(0, 6).toUpperCase();
+  const tripDate = new Date(`${booking.booking_date}T00:00:00+08:00`).toLocaleDateString("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "Asia/Manila",
+  });
+  const guests = `${booking.num_guests} guest${booking.num_guests === 1 ? "" : "s"}`;
+  // Pre-fill PayMongo's customer form with what the tourist already gave us.
+  const { data: { user } } = await supabase.auth.getUser();
+  const billing = {
+    ...(booking.contact_name ? { name: booking.contact_name } : {}),
+    ...(user?.email ? { email: user.email } : {}),
+    ...(booking.contact_phone ? { phone: booking.contact_phone } : {}),
+  };
+
   const returnUrl =
     `${Deno.env.get("SUPABASE_URL")}/functions/v1/paymongo-return?bid=${booking.id}`;
 
@@ -102,7 +122,8 @@ Deno.serve(async (req: Request) => {
             },
           ],
           payment_method_types: ["gcash", "paymaya"],
-          description: `Booking ${booking.id}`,
+          description: `${destName} · ${tripDate} · ${guests} · Ref ${ref}`,
+          ...(Object.keys(billing).length ? { billing } : {}),
           reference_number: booking.id,
           metadata: { booking_id: booking.id, payment_kind: kind },
           success_url: `${returnUrl}&outcome=success`,
