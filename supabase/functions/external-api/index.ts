@@ -9,8 +9,13 @@
 // 20261030000000) so a leaked session can't run up the bill.
 //
 // Secrets: GEMINI_API_KEY, OPENWEATHER_API_KEY, GOOGLE_MAPS_SERVER_KEY.
-// A missing secret answers 503 "not configured" and the app degrades the same
-// way it did when the key was absent from .env.
+//
+// Errors carry a machine-readable "code" next to the message so the app can
+// show a plain-language explanation:
+//   not_configured  the secret for this service isn't set yet
+//   daily_limit     this user used up today's quota (bump_api_usage)
+//   rate_limited    the provider's own limit (Gemini free tier: per minute/day)
+//   busy            the provider is overloaded; usually gone within minutes
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -31,6 +36,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+function fail(status: number, code: string, error: string): Response {
+  return json({ error, code }, status);
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -95,6 +104,8 @@ async function gemini(input: Record<string, unknown>, key: string): Promise<Resp
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify(body),
   });
+  if (res.status === 429) return fail(429, "rate_limited", "The AI has reached its limit for now");
+  if (res.status === 503) return fail(503, "busy", "The AI is busy right now");
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     return json({ error: `Reasoning model request failed (${res.status}): ${errText.slice(0, 300)}` }, 502);
@@ -187,7 +198,7 @@ Deno.serve(async (req: Request) => {
   const action = ACTIONS[input.action as keyof typeof ACTIONS];
 
   const key = Deno.env.get(action.secret);
-  if (!key) return json({ error: "not configured" }, 503);
+  if (!key) return fail(503, "not_configured", "not configured");
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -199,7 +210,7 @@ Deno.serve(async (req: Request) => {
     p_limit: DAILY_LIMITS[action.quota],
   });
   if (quotaError) return json({ error: quotaError.message }, 500);
-  if (!allowed) return json({ error: "Daily limit reached, please try again tomorrow" }, 429);
+  if (!allowed) return fail(429, "daily_limit", "Daily limit reached, please try again tomorrow");
 
   try {
     return await action.run(input, key);
