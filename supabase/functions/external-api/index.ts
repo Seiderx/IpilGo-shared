@@ -20,9 +20,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const GEMINI_MODEL = "gemini-3.5-flash";
-const GEMINI_ENDPOINT =
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// Main model first; when it is out of free quota (429), overloaded (503) or
+// unavailable, the same request goes to lighter models, each of which has its
+// own free allowance. The app only ever sees one answer or one error.
+const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+const geminiEndpoint = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 // Calls allowed per user per day (Philippine time).
 const DAILY_LIMITS = { gemini: 300, weather: 300, maps: 500 } as const;
@@ -99,13 +102,22 @@ async function gemini(input: Record<string, unknown>, key: string): Promise<Resp
   };
   if (system) body.systemInstruction = { parts: [{ text: system }] };
 
-  const res = await fetch(GEMINI_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify(body),
-  });
+  let res: Response | null = null;
+  let model = GEMINI_MODELS[0];
+  for (model of GEMINI_MODELS) {
+    res = await fetch(geminiEndpoint(model), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify(body),
+    });
+    // 404: model not offered to this key; try the next one too.
+    if (![429, 503, 404].includes(res.status)) break;
+    console.warn(`gemini ${model} -> ${res.status}, trying next model`);
+    await res.body?.cancel();
+  }
+  if (!res) throw new Error("No Gemini model configured");
   if (res.status === 429) return fail(429, "rate_limited", "The AI has reached its limit for now");
-  if (res.status === 503) return fail(503, "busy", "The AI is busy right now");
+  if (res.status === 503 || res.status === 404) return fail(503, "busy", "The AI is busy right now");
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     return json({ error: `Reasoning model request failed (${res.status}): ${errText.slice(0, 300)}` }, 502);
@@ -115,6 +127,7 @@ async function gemini(input: Record<string, unknown>, key: string): Promise<Resp
   return json({
     text: parts.map((p) => p.text ?? "").join("").trim(),
     finishReason: data?.candidates?.[0]?.finishReason ?? "unknown",
+    model,
   });
 }
 
