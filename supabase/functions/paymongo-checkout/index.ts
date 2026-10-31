@@ -84,7 +84,8 @@ Deno.serve(async (req: Request) => {
   const label = kind === "deposit" ? "Down payment" : kind === "balance" ? "Remaining balance" : "Booking";
   // What the tourist reads on PayMongo's page: the trip, not a database id.
   // Same reference the apps show (bookingCode in tourist/owner).
-  const ref = `IPG-${new Date(booking.created_at).getFullYear()}-` +
+  const year = new Date(booking.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }).slice(0, 4);
+  const ref = `IPG-${year}-` +
     booking.id.replace(/-/g, "").slice(0, 6).toUpperCase();
   const tripDate = new Date(`${booking.booking_date}T00:00:00+08:00`).toLocaleDateString("en-PH", {
     month: "short",
@@ -124,7 +125,7 @@ Deno.serve(async (req: Request) => {
           payment_method_types: ["gcash", "paymaya"],
           description: `${destName} · ${tripDate} · ${guests} · Ref ${ref}`,
           ...(Object.keys(billing).length ? { billing } : {}),
-          reference_number: booking.id,
+          reference_number: ref, // shown on the PayMongo page; metadata carries the id
           metadata: { booking_id: booking.id, payment_kind: kind },
           success_url: `${returnUrl}&outcome=success`,
           cancel_url: `${returnUrl}&outcome=cancelled`,
