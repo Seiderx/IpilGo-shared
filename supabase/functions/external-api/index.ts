@@ -134,7 +134,41 @@ async function gemini(input: Record<string, unknown>, key: string): Promise<Resp
 // --- OpenWeatherMap -------------------------------------------------------------
 
 // One Call 3.0 first; if the key isn't subscribed to it, the free 2.5
-// current-weather endpoint. The app parses whichever comes back.
+// endpoints: current weather plus the 5-day / 3-hour forecast rolled up into
+// One Call-shaped daily entries, so the app can plan up to 5 days ahead.
+// The current-weather fields stay on the payload for older app versions.
+const SEVERITY = ["Thunderstorm", "Rain", "Drizzle", "Squall", "Clouds", "Mist", "Haze", "Clear"];
+
+type Slot = { dt: number; main: { temp: number }; weather: { main: string }[]; pop?: number };
+
+function dailyFromSlots(slots: Slot[], tzOffsetSec: number) {
+  const byDay = new Map<string, Slot[]>();
+  for (const s of slots) {
+    const day = new Date((s.dt + tzOffsetSec) * 1000).toISOString().slice(0, 10);
+    byDay.set(day, [...(byDay.get(day) ?? []), s]);
+  }
+  return [...byDay.entries()].map(([day, list]) => {
+    // Daytime slots (6am-6pm local) decide the day; fall back to all of them.
+    const daytime = list.filter((s) => {
+      const h = new Date((s.dt + tzOffsetSec) * 1000).getUTCHours();
+      return h >= 6 && h <= 18;
+    });
+    const use = daytime.length ? daytime : list;
+    const counts = new Map<string, number>();
+    for (const s of use) counts.set(s.weather?.[0]?.main ?? "Clear", (counts.get(s.weather?.[0]?.main ?? "Clear") ?? 0) + 1);
+    // Storms or rain anywhere in the day win; otherwise the most common sky.
+    const wet = SEVERITY.slice(0, 3).find((m) => counts.has(m));
+    const main = wet ?? [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    const [y, m, d] = day.split("-").map(Number);
+    return {
+      dt: Date.UTC(y, m - 1, d, 12) / 1000 - tzOffsetSec, // local noon
+      temp: { day: Math.max(...use.map((s) => s.main.temp)) },
+      weather: [{ main }],
+      pop: Math.max(...list.map((s) => s.pop ?? 0)),
+    };
+  });
+}
+
 async function weather(input: Record<string, unknown>, key: string): Promise<Response> {
   const { lat, lng } = point(input.point);
   const oneCall = await fetch(
@@ -143,11 +177,31 @@ async function weather(input: Record<string, unknown>, key: string): Promise<Res
   );
   if (oneCall.ok) return json({ source: "onecall-3.0", data: await oneCall.json() });
 
-  const current = await fetch(
-    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${key}`,
-  );
+  const q = `lat=${lat}&lon=${lng}&units=metric&appid=${key}`;
+  const [current, forecast] = await Promise.all([
+    fetch(`https://api.openweathermap.org/data/2.5/weather?${q}`),
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?${q}`),
+  ]);
   if (!current.ok) return json({ error: `Weather request failed (${current.status})` }, 502);
-  return json({ source: "current-2.5", data: await current.json() });
+  const now = await current.json();
+  if (!forecast.ok) return json({ source: "current-2.5", data: now });
+
+  const f = await forecast.json();
+  const tz = Number(f?.city?.timezone ?? now?.timezone ?? 0);
+  const daily = dailyFromSlots(Array.isArray(f?.list) ? f.list : [], tz);
+  // Late at night the forecast starts tomorrow; today comes from current weather.
+  const today = new Date((Date.now() / 1000 + tz) * 1000).toISOString().slice(0, 10);
+  const firstDay = daily[0] ? new Date((daily[0].dt + tz) * 1000).toISOString().slice(0, 10) : null;
+  if (firstDay !== today) {
+    const [y, m, d] = today.split("-").map(Number);
+    daily.unshift({
+      dt: Date.UTC(y, m - 1, d, 12) / 1000 - tz,
+      temp: { day: now?.main?.temp },
+      weather: [{ main: now?.weather?.[0]?.main ?? "Clear" }],
+      pop: 0,
+    });
+  }
+  return json({ source: "forecast-2.5", data: { ...now, daily } });
 }
 
 // --- Google Maps web services ---------------------------------------------------
