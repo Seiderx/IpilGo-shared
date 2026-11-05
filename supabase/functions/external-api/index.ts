@@ -169,13 +169,28 @@ function dailyFromSlots(slots: Slot[], tzOffsetSec: number) {
   });
 }
 
+// The next 24 hours, so the app can say when rain is expected rather than
+// showing only the day's peak.
+type RainSlot = { dt: number; pop: number; main: string };
+
+function upcomingSlots(list: { dt: number; pop?: number; weather?: { main: string }[] }[]): RainSlot[] {
+  const now = Date.now() / 1000;
+  return list
+    .filter((s) => s.dt > now - 3600 && s.dt <= now + 24 * 3600)
+    .map((s) => ({ dt: s.dt, pop: s.pop ?? 0, main: s.weather?.[0]?.main ?? "Clear" }));
+}
+
 async function weather(input: Record<string, unknown>, key: string): Promise<Response> {
   const { lat, lng } = point(input.point);
   const oneCall = await fetch(
     `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}` +
-      `&units=metric&exclude=minutely,hourly,alerts&appid=${key}`,
+      `&units=metric&exclude=minutely,alerts&appid=${key}`,
   );
-  if (oneCall.ok) return json({ source: "onecall-3.0", data: await oneCall.json() });
+  if (oneCall.ok) {
+    const { hourly, ...rest } = await oneCall.json();
+    const slots = upcomingSlots(Array.isArray(hourly) ? hourly : []);
+    return json({ source: "onecall-3.0", data: { ...rest, slots } });
+  }
 
   const q = `lat=${lat}&lon=${lng}&units=metric&appid=${key}`;
   const [current, forecast] = await Promise.all([
@@ -188,7 +203,8 @@ async function weather(input: Record<string, unknown>, key: string): Promise<Res
 
   const f = await forecast.json();
   const tz = Number(f?.city?.timezone ?? now?.timezone ?? 0);
-  const daily = dailyFromSlots(Array.isArray(f?.list) ? f.list : [], tz);
+  const list = Array.isArray(f?.list) ? f.list : [];
+  const daily = dailyFromSlots(list, tz);
   // Late at night the forecast starts tomorrow; today comes from current weather.
   const today = new Date((Date.now() / 1000 + tz) * 1000).toISOString().slice(0, 10);
   const firstDay = daily[0] ? new Date((daily[0].dt + tz) * 1000).toISOString().slice(0, 10) : null;
@@ -201,7 +217,7 @@ async function weather(input: Record<string, unknown>, key: string): Promise<Res
       pop: 0,
     });
   }
-  return json({ source: "forecast-2.5", data: { ...now, daily } });
+  return json({ source: "forecast-2.5", data: { ...now, daily, slots: upcomingSlots(list) } });
 }
 
 // --- Google Maps web services ---------------------------------------------------
