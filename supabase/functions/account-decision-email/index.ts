@@ -26,6 +26,17 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+// Same logo as the admin panel. PNG, because mail apps can't all show WebP.
+const LOGO_URL = "https://ipilgo-admin-onrender-com.onrender.com/favicon.png";
+
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 type Kind = "owner" | "admin";
 type Mail = { subject: string; body: string };
 
@@ -142,6 +153,7 @@ Deno.serve(async (req: Request) => {
   const to = authUser?.user?.email;
   if (authErr || !to) return json({ error: "No email on this account" }, 404);
 
+  const name = target.full_name || "there";
   const transport = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
@@ -154,7 +166,13 @@ Deno.serve(async (req: Request) => {
       from: { name: "IpilGo", address: smtpUser },
       to,
       subject: mail.subject,
-      text: `Hi ${target.full_name || "there"},\n\n${mail.body}\n\nIpil Tourism Office`,
+      text: `Hi ${name},\n\n${mail.body}\n\nIpil Tourism Office`,
+      html: `<div style="max-width:480px;margin:0 auto;padding:24px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#0F4C5C">
+<img src="${LOGO_URL}" width="64" height="64" alt="IpilGo" style="display:block;margin-bottom:16px">
+<p>Hi ${escapeHtml(name)},</p>
+<p>${escapeHtml(mail.body)}</p>
+<p>Ipil Tourism Office</p>
+</div>`,
     });
   } catch (e) {
     console.error("decision email failed", e instanceof Error ? e.message : e);
