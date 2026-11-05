@@ -1,6 +1,6 @@
 // Server-side gateway to the paid third-party APIs the tourist app uses:
-// Gemini (AI reasoning), OpenWeatherMap (weather) and the Google Maps web
-// services (Directions, Distance Matrix). The keys live only here as Supabase
+// Gemini (AI reasoning), OpenWeatherMap (weather) and OpenRouteService
+// (Directions, Distance Matrix). The keys live only here as Supabase
 // secrets, so they are never built into the APK where anyone could extract
 // them.
 //
@@ -8,7 +8,7 @@
 // Every call is counted per user per day (bump_api_usage, migration
 // 20261030000000) so a leaked session can't run up the bill.
 //
-// Secrets: GEMINI_API_KEY, OPENWEATHER_API_KEY, GOOGLE_MAPS_SERVER_KEY.
+// Secrets: GEMINI_API_KEY, OPENWEATHER_API_KEY, OPENROUTESERVICE_API_KEY.
 //
 // Errors carry a machine-readable "code" next to the message so the app can
 // show a plain-language explanation:
@@ -220,18 +220,103 @@ async function weather(input: Record<string, unknown>, key: string): Promise<Res
   return json({ source: "forecast-2.5", data: { ...now, daily, slots: upcomingSlots(list) } });
 }
 
-// --- Google Maps web services ---------------------------------------------------
+// --- OpenRouteService -----------------------------------------------------------
+
+// Answers keep the Google Directions / Distance Matrix shape, so the app and
+// older installed versions parse them unchanged.
+const ORS_BASE = "https://api.openrouteservice.org/v2";
+const orsProfile = (mode: "driving" | "walking") => mode === "walking" ? "foot-walking" : "driving-car";
+
+// Beach pins can sit far from the nearest mapped road.
+const SNAP_RADIUS_M = 2000;
+
+// OpenRouteService has no live traffic. Driving times are stretched by the
+// time of day in Ipil (UTC+8), so these are estimates, never live readings.
+function rushFactor(): number {
+  const hour = new Date(Date.now() + 8 * 3600 * 1000).getUTCHours();
+  if ((hour >= 7 && hour < 9) || (hour >= 17 && hour < 19)) return 1.25;
+  if (hour >= 11 && hour < 13) return 1.1;
+  return 1;
+}
+
+function orsPost(path: string, body: unknown, key: string): Promise<Response> {
+  return fetch(`${ORS_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: key },
+    body: JSON.stringify(body),
+  });
+}
+
+async function orsFailure(res: Response, label: string): Promise<Response> {
+  if (res.status === 429) return fail(429, "rate_limited", "Routing has reached its limit for now");
+  // 404 means no road route between the points; the app shows that as such.
+  if (res.status === 404) return json({ status: "ZERO_RESULTS", routes: [], rows: [] });
+  const text = await res.text().catch(() => "");
+  console.warn(`${label} ${res.status}: ${text.slice(0, 300)}`);
+  return json({ error: `${label} ${res.status}` }, 502);
+}
+
+function decodePolyline(encoded: string): [number, number][] {
+  const out: [number, number][] = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    for (const which of [0, 1]) {
+      let result = 0, shift = 0, byte = 0x20;
+      while (byte >= 0x20) {
+        byte = encoded.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      }
+      const delta = result & 1 ? ~(result >> 1) : result >> 1;
+      if (which === 0) lat += delta;
+      else lng += delta;
+    }
+    out.push([lat / 1e5, lng / 1e5]);
+  }
+  return out;
+}
+
+type OrsStep = { distance: number; duration: number; instruction: string; way_points: [number, number] };
 
 async function directions(input: Record<string, unknown>, key: string): Promise<Response> {
   const o = point(input.origin);
   const d = point(input.destination);
   const mode = travelMode(input.mode);
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/directions/json?origin=${o.lat},${o.lng}` +
-      `&destination=${d.lat},${d.lng}&mode=${mode}&departure_time=now&key=${key}`,
-  );
-  if (!res.ok) return json({ error: `directions ${res.status}` }, 502);
-  return json(await res.json());
+  const res = await orsPost(`/directions/${orsProfile(mode)}/json`, {
+    coordinates: [[o.lng, o.lat], [d.lng, d.lat]],
+    radiuses: [SNAP_RADIUS_M, SNAP_RADIUS_M],
+    instructions: true,
+    language: "en",
+  }, key);
+  if (!res.ok) return orsFailure(res, "directions");
+
+  const route = (await res.json())?.routes?.[0];
+  if (!route) return json({ status: "ZERO_RESULTS", routes: [] });
+  const line = decodePolyline(route.geometry);
+  const at = (i: number) => {
+    const p = line[Math.min(i, line.length - 1)];
+    return { lat: p[0], lng: p[1] };
+  };
+  const steps: OrsStep[] = route.segments?.[0]?.steps ?? [];
+  const seconds = route.summary?.duration ?? 0;
+  return json({
+    status: "OK",
+    routes: [{
+      overview_polyline: { points: route.geometry },
+      legs: [{
+        distance: { value: route.summary?.distance ?? 0 },
+        duration: { value: seconds },
+        ...(mode === "driving" ? { duration_in_traffic: { value: seconds * rushFactor() } } : {}),
+        steps: steps.map((s) => ({
+          html_instructions: s.instruction,
+          distance: { value: s.distance },
+          duration: { value: s.duration },
+          start_location: at(s.way_points[0]),
+          end_location: at(s.way_points[1]),
+        })),
+      }],
+    }],
+  });
 }
 
 async function distanceMatrix(input: Record<string, unknown>, key: string): Promise<Response> {
@@ -244,13 +329,29 @@ async function distanceMatrix(input: Record<string, unknown>, key: string): Prom
   }
   const dests = input.destinations.map(point);
   const mode = travelMode(input.mode);
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${o.lat},${o.lng}` +
-      `&destinations=${dests.map((p) => `${p.lat},${p.lng}`).join("|")}` +
-      `&mode=${mode}&departure_time=now&key=${key}`,
-  );
-  if (!res.ok) return json({ error: `distance matrix ${res.status}` }, 502);
-  return json(await res.json());
+  const res = await orsPost(`/matrix/${orsProfile(mode)}`, {
+    locations: [o, ...dests].map((p) => [p.lng, p.lat]),
+    sources: [0],
+    destinations: dests.map((_, i) => i + 1),
+    metrics: ["distance", "duration"],
+    units: "m",
+  }, key);
+  if (!res.ok) return orsFailure(res, "distance matrix");
+
+  const data = await res.json();
+  const factor = mode === "driving" ? rushFactor() : 1;
+  const elements = dests.map((_, i) => {
+    const seconds = data?.durations?.[0]?.[i];
+    const meters = data?.distances?.[0]?.[i];
+    if (seconds == null || meters == null) return { status: "ZERO_RESULTS" };
+    return {
+      status: "OK",
+      distance: { value: meters },
+      duration: { value: seconds },
+      ...(mode === "driving" ? { duration_in_traffic: { value: seconds * factor } } : {}),
+    };
+  });
+  return json({ status: "OK", rows: [{ elements }] });
 }
 
 // --- Entry ----------------------------------------------------------------------
@@ -258,8 +359,8 @@ async function distanceMatrix(input: Record<string, unknown>, key: string): Prom
 const ACTIONS = {
   gemini: { quota: "gemini", secret: "GEMINI_API_KEY", run: gemini },
   weather: { quota: "weather", secret: "OPENWEATHER_API_KEY", run: weather },
-  directions: { quota: "maps", secret: "GOOGLE_MAPS_SERVER_KEY", run: directions },
-  distancematrix: { quota: "maps", secret: "GOOGLE_MAPS_SERVER_KEY", run: distanceMatrix },
+  directions: { quota: "maps", secret: "OPENROUTESERVICE_API_KEY", run: directions },
+  distancematrix: { quota: "maps", secret: "OPENROUTESERVICE_API_KEY", run: distanceMatrix },
 } as const;
 
 Deno.serve(async (req: Request) => {
