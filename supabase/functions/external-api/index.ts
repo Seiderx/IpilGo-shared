@@ -224,7 +224,8 @@ async function weather(input: Record<string, unknown>, key: string): Promise<Res
 
 // Answers keep the Google Directions / Distance Matrix shape, so the app and
 // older installed versions parse them unchanged.
-const ORS_BASE = "https://api.openrouteservice.org/v2";
+const ORS_BASE = "https://api.heigit.org/openrouteservice/v2";
+const ORS_OLD_BASE = "https://api.openrouteservice.org/v2";
 const orsProfile = (mode: "driving" | "walking") => mode === "walking" ? "foot-walking" : "driving-car";
 
 // Beach pins can sit far from the nearest mapped road.
@@ -239,12 +240,24 @@ function rushFactor(): number {
   return 1;
 }
 
-function orsPost(path: string, body: unknown, key: string): Promise<Response> {
-  return fetch(`${ORS_BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: key },
-    body: JSON.stringify(body),
-  });
+async function orsPost(path: string, body: unknown, key: string): Promise<Response> {
+  const send = (base: string) =>
+    fetch(`${base}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: key },
+      body: JSON.stringify(body),
+    });
+  try {
+    const res = await send(ORS_BASE);
+    // 400 and 429 would repeat on the old host. A real "no route" 404 also
+    // repeats there, so retrying costs one call and changes no answer.
+    if (res.ok || res.status === 400 || res.status === 429) return res;
+    console.warn(`ORS new host ${res.status}, using old host`);
+    await res.body?.cancel();
+  } catch (e) {
+    console.warn(`ORS new host unreachable, using old host: ${e}`);
+  }
+  return send(ORS_OLD_BASE);
 }
 
 async function orsFailure(res: Response, label: string): Promise<Response> {
