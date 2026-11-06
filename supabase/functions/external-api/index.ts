@@ -30,7 +30,7 @@ const geminiEndpoint = (model: string) =>
 // Calls allowed per user per day (Philippine time).
 const DAILY_LIMITS = { gemini: 300, weather: 300, maps: 500 } as const;
 
-const MAX_PROMPT_CHARS = 30_000;
+const MAX_PROMPT_CHARS = 60_000;
 const MAX_OUTPUT_TOKENS = 4096;
 const MAX_MATRIX_DESTINATIONS = 25;
 
