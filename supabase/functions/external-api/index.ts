@@ -171,13 +171,29 @@ function dailyFromSlots(slots: Slot[], tzOffsetSec: number) {
 
 // The next 24 hours, so the app can say when rain is expected rather than
 // showing only the day's peak.
-type RainSlot = { dt: number; pop: number; main: string };
+// temp and id feed the Home weather strip (temperatures, heavy rain vs light).
+type RainSlot = { dt: number; pop: number; main: string; temp: number | null; id: number | null };
 
-function upcomingSlots(list: { dt: number; pop?: number; weather?: { main: string }[] }[]): RainSlot[] {
+type ForecastItem = {
+  dt: number;
+  pop?: number;
+  // One Call hourly has a number; the 2.5 forecast nests it in main.
+  temp?: number;
+  main?: { temp?: number };
+  weather?: { main: string; id?: number }[];
+};
+
+function upcomingSlots(list: ForecastItem[]): RainSlot[] {
   const now = Date.now() / 1000;
   return list
     .filter((s) => s.dt > now - 3600 && s.dt <= now + 24 * 3600)
-    .map((s) => ({ dt: s.dt, pop: s.pop ?? 0, main: s.weather?.[0]?.main ?? "Clear" }));
+    .map((s) => ({
+      dt: s.dt,
+      pop: s.pop ?? 0,
+      main: s.weather?.[0]?.main ?? "Clear",
+      temp: typeof s.temp === "number" ? s.temp : s.main?.temp ?? null,
+      id: s.weather?.[0]?.id ?? null,
+    }));
 }
 
 async function weather(input: Record<string, unknown>, key: string): Promise<Response> {
