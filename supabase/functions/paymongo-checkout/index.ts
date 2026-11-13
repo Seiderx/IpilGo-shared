@@ -63,9 +63,16 @@ Deno.serve(async (req: Request) => {
   if (booking.status === "cancelled" || booking.status === "rejected") {
     return json({ error: `Cannot pay for a ${booking.status} booking` }, 400);
   }
-  // Without a down payment, the owner accepts first and the tourist pays after.
-  if (deposit === 0 && paid === 0 && booking.status !== "confirmed") {
-    return json({ error: "Please wait for the owner to accept your booking before paying." }, 400);
+  // The owner confirms first; only then can the tourist pay.
+  if (booking.status === "pending") {
+    return json({ error: "Please wait for the owner to confirm your booking before paying." }, 400);
+  }
+  // Only the down payment is paid online. The rest is paid at the spot.
+  if (deposit > 0 && paid >= deposit) {
+    return json({ error: "Your down payment is already paid. Pay the rest at the spot." }, 400);
+  }
+  if (deposit > 0 && booking.pay_by && new Date(booking.pay_by).getTime() < Date.now()) {
+    return json({ error: "The time to pay the down payment has passed, so this booking was closed." }, 400);
   }
 
   // First payment: the down payment if one applies (or the full amount); after
