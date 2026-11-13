@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
   const { data: booking, error } = await supabase
     .from("bookings")
     .select(
-      "id, total_amount, amount_due_now, amount_paid, deposit_amount, payment_status, status, " +
+      "id, total_amount, amount_due_now, amount_paid, deposit_amount, payment_status, status, pay_by, " +
         "booking_date, num_guests, contact_name, contact_phone, created_at, destinations(name)",
     )
     .eq("id", booking_id)
