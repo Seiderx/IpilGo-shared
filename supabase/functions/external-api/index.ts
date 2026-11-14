@@ -28,7 +28,9 @@ const geminiEndpoint = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 // Calls allowed per user per day (Philippine time).
-const DAILY_LIMITS = { gemini: 300, weather: 300, maps: 500 } as const;
+// AI is the scarce one: the free Gemini tier is shared by every user, so one
+// person may not use it all. 100 covers about 25 searches, chats or plans a day.
+const DAILY_LIMITS = { gemini: 100, weather: 300, maps: 500 } as const;
 
 const MAX_PROMPT_CHARS = 60_000;
 const MAX_OUTPUT_TOKENS = 4096;
@@ -423,7 +425,7 @@ Deno.serve(async (req: Request) => {
     p_limit: DAILY_LIMITS[action.quota],
   });
   if (quotaError) return json({ error: quotaError.message }, 500);
-  if (!allowed) return fail(429, "daily_limit", "Daily limit reached, please try again tomorrow");
+  if (!allowed) return fail(429, "daily_limit", "You reached today's limit. Please try again tomorrow");
 
   try {
     return await action.run(input, key);
