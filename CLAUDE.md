@@ -70,3 +70,7 @@ plain-language justification ("why this was suggested"). Also required: an Itine
 real-time map, route distance/time per vehicle type, and verifiable payment authenticity. Keep 
 these requirements in mind when making architecture decisions, even in phases that don't 
 explicitly mention them.
+
+## Session Memory
+
+Past-session notes are copied in `docs/claude-memory/` (index: `MEMORY.md`). Read the index at session start when running remotely. Test passwords are removed from the copy.

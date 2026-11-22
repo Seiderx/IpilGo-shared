@@ -1,0 +1,32 @@
+- [Nested git repos](nested-git-repos.md) — root repo = migrations only; tourist/owner/admin are separate repos with own remotes, commit each
+- [Build plan: email guard, OAuth, download site](pending-email-hardening.md) — 5-step plan, steps 1-4 done, step 5 setup guide next; continue from first not-DONE step
+- [Local APK builds](local-apk-builds.md) — user builds release APKs locally via Android Studio JBR, not EAS; android/ folders gitignored
+- [Scope decisions](scope-decisions.md) — guide-only booking, showcase hotels/restaurants, owner app role; backlog in docs/IpilGo_Scope_Decisions.md
+- [Test at end](test-at-end.md) — user tests whole backlog at once; no per-item phone testing, one release per batch
+- [Round 3 tourist feedback](round3-tourist-feedback.md) — 2026-10-28 decisions: booking = owner services (not guide-only), deposits, fare formula, itinerary rework; build not started
+- [Checklists in chat](checklists-in-chat.md) — show status checklists in chat, never as repo files
+- [Owner v1.2.0 build plan](owner-v120-build-plan.md) — strict 13-step plan (auth parity, removals, services, deposits) matching tourist v1.2.0; start at Step 0
+- [Cross-app parity](cross-app-parity.md) — fix in tourist or owner touching shared logic must be ported to the other app (and admin if shared data)
+- [Supabase MCP declines destructive SQL](supabase-mcp-destructive-decline.md) — drop/mass update migrations come back "declined"; use create or replace, skip needless backfills
+- [UI redesign direction](ui-redesign-direction.md) — de-AI the look: quiet-premium minimal style, uniform icons; design phase before admin portal
+- [Redesign build plan](redesign-build-plan.md) — D1-D4, A1-A7, W done; v1.3.0 released; next = R step (Maps key, tourist v1.3.1)
+- [Security tools](security-tools.md) — SkillSpector + graphify in ~/tools; Windows usage, graphify pinned via ~/bin shim
+- [Nav restructure plan](nav-restructure-plan.md) — v1.4.0 released 2026-10-30; next = Maps key, owner Basic info map, v1.4.1 + fixes from user testing
+- [Hosting + domain plan](hosting-domain-plan.md) — Render-only, both sites Static free; buy one domain, admin on subdomain; next = user buys domain
+- [API keys server-side](api-keys-server-side.md) — Gemini/weather/maps keys moved to external-api edge fn; done; verify on next tourist release; Maps key 2 → Supabase later
+- [Itinerary draft batch](itinerary-draft-batch.md) — all 5 steps DONE 2026-10-30; awaiting user phone test in next tourist release
+- [Owner debug session](owner-debug-session.md) — phone via adb ~1am; no release yet; open owner gaps list
+- [Phone test session](phone-test-session.md) — 2026-10-31 strict phone pass; tourist done, owner in progress (RESUME POINT at end of file), admin next, then v1.4.1
+- [Tourist agents plan](tourist-agents-plan.md) — items 1-3 built 2026-11-01 (60f0fa8), untested on phone; next v1.4.1 then final 3-portal test
+- [Final test pass](final-test-pass.md) — 2026-11-01 3-portal pass COMPLETE; 47 findings, test accounts, decisions (reviews opt 2, delete rules)
+- [Fix build plan](fix-build-plan.md) — 13-step plan; 1-10 + 12 done, Maps deferred (no budget); v1.5.0 released 2026-11-01; user testing; logo pending
+- [Auto-proceed steps](auto-proceed-steps.md) — go to next plan step without asking; still stop for deploys/user input
+- [Admin audit 2026-11-06](admin-audit-2026-11-06.md) — strict admin test + approved Option A redesign; build not started, wait for user go
+- [Next session plan](next-session-plan.md) — prototypes + flowcharts v1.7 done; Drive folders made 2026-11-08, user drags files manually (MCP cannot upload big files)
+- [Destination list](destination-list.md) — real list 2026-11-06 for fresh data; 14 places, corrected pins; 2 cafes lack barangay
+- [360 photo upload](pano-360-upload.md) — 2026-11-07 HQ redo live on all 38, in hq/ folder; Bayan night shot needs daytime reshoot
+- [Round 4 feedback](round4-feedback-2026-11-13.md) — 2026-11-13 plan A-F; ALL BUILT and pushed 2026-11-14 except F19 (deploy, v1.8.0); see Round 5 next
+- [Neat organized UI](neat-organized-ui.md) — strict rule: neat, tidy, ordered, user friendly; progress checklist after every task
+- [Cancellation cutoff plan](cancellation-cutoff-plan.md) — approved 2026-11-10, not built; cutoff replaces refundable switch, 5 fixes, 3 open questions; wait for user go
+- [Round 5 phone test](round5-phone-test-2026-11-14.md) — 2026-11-14 phone test, 10 findings with decisions, NOT built; START HERE next session
+- [Ponytail plugin](ponytail-plugin.md) — lazy-senior-dev coding plugin installed 2026-11-16, user scope; coexists with caveman
