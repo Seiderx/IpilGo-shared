@@ -29,4 +29,5 @@
 - [Neat organized UI](neat-organized-ui.md) — strict rule: neat, tidy, ordered, user friendly; progress checklist after every task
 - [Cancellation cutoff plan](cancellation-cutoff-plan.md) — approved 2026-11-10, not built; cutoff replaces refundable switch, 5 fixes, 3 open questions; wait for user go
 - [Round 5 phone test](round5-phone-test-2026-11-14.md) — 2026-11-14 phone test, 10 findings with decisions, NOT built; START HERE next session
+- [Owner Home uncrowded](owner-home-uncrowded.md) — 2026-11-23 Home restructure: no crowding, day summary dominant, every guest equal; not built
 - [Ponytail plugin](ponytail-plugin.md) — lazy-senior-dev coding plugin installed 2026-11-16, user scope; coexists with caveman
