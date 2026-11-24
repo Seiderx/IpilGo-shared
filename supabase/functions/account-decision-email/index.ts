@@ -27,7 +27,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 // Same logo as the admin panel. PNG, because mail apps can't all show WebP.
-const LOGO_URL = "https://ipilgo-admin-onrender-com.onrender.com/favicon.png";
+const LOGO_URL = "https://admin.ipilgo.com/favicon.png";
 
 function escapeHtml(text: string): string {
   return text
