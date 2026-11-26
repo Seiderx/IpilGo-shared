@@ -1,6 +1,6 @@
 ---
 name: events-feature-plan
-description: "Events build plan APPROVED 2026-11-27, build NOT started; start next session at Step 0/1"
+description: "Events build steps 1-6 DONE 2026-11-27 (v1.9.0 code 14 bumped); next = step 7 user builds APKs + phone test"
 metadata:
   node_type: memory
   type: project
@@ -22,7 +22,7 @@ DECIDED 2026-11-27 (user said "continue the build, another session"):
 - Admin filter bars (all list pages): search ~320px with icon, dropdowns beside it, result count right. CSS .filter-row + inline flex:1 in 6 pages.
 - PayMongo edge fns (paymongo-checkout/return/webhook, booking-refunds): user deletes in Supabase dashboard (no MCP delete tool).
 
-BUILD PLAN: 0 user deletes PayMongo fns · 1 DB (events: image_url, start_time, place_name, lat/lng; poster storage bucket + RLS) · 2 admin form + filter bars · 3 tourist carousel + event page · 4 push notifications (send-push + cron, 3 days before + day of) · 5 event agent adds to saved trips · 6 version bump (tourist 1.9.0 -> next), typecheck, commit/push · 7 user builds both APKs, one phone test of GCash + events.
+BUILD PLAN: 0 user deletes PayMongo fns · 1 DONE (posters in destination-images/admin/events/, no new bucket) DB (events: image_url, start_time, place_name, lat/lng; poster storage bucket + RLS) · 2 DONE (SearchBox component + .filter-count) admin form + filter bars · 3 DONE (lib/events.ts, EventCarousel, app/event/[id].tsx, itinerary_items.event_id + kind event, Add to my trip w/ no trip -> planner ?start&days=1&event=id; planner ignores event param until step 5) tourist carousel + event page · 4 DONE (SQL send_town_event_notices + cron town-event-notices 00:00 UTC; event_notices table; no new edge fn) push notifications (send-push + cron, 3 days before + day of) · 5 DONE (same SQL job adds to saved trips is_suggested; planner adds town events client side) event agent adds to saved trips · 6 DONE both apps 1.9.0/code 14; version.json NOT yet pushed (do after APKs built) · 7 user builds both APKs, one phone test of GCash + events.
 
 **Why:** panel wants a real Event Monitoring agent that acts and explains why.
 **How to apply:** start at Step 1 next session (ask if Step 0 done). Ship with GCash QR batch ([[payment-qr-decision]]) in one release ([[test-at-end]]). Keep replies VERY short and plain; user got lost on long answers.

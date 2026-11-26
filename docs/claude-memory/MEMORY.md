@@ -36,4 +36,4 @@
 - [Payment approach](payment-qr-decision.md) — GCash QR build COMPLETE 2026-11-25, untested; PayMongo fns still deployed
 - [Reply language](reply-language.md) — user mixes Bisaya/English via voice; always answer in plain simple English
 - [Admin polish 2026-11-24](admin-polish-2026-11-24.md) — auth/form parity with apps DONE (4314c94); signed-in pages untested
-- [Events feature plan](events-feature-plan.md) — PLAN APPROVED 2026-11-27, build NOT started; START HERE next session (Step 0/1)
+- [Events feature plan](events-feature-plan.md) — steps 1-6 DONE 2026-11-27, v1.9.0 bumped; next = user builds APKs + phone test (step 7)
