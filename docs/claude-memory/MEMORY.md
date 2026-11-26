@@ -12,7 +12,7 @@
 - [Redesign build plan](redesign-build-plan.md) — D1-D4, A1-A7, W done; v1.3.0 released; next = R step (Maps key, tourist v1.3.1)
 - [Security tools](security-tools.md) — SkillSpector + graphify in ~/tools; Windows usage, graphify pinned via ~/bin shim
 - [Nav restructure plan](nav-restructure-plan.md) — v1.4.0 released 2026-10-30; next = Maps key, owner Basic info map, v1.4.1 + fixes from user testing
-- [Hosting + domain plan](hosting-domain-plan.md) — Render-only, both sites Static free; buy one domain, admin on subdomain; next = user buys domain
+- [Hosting + domain plan](hosting-domain-plan.md) — ipilgo.com + admin.ipilgo.com LIVE, Search Console done 2026-11-25; left = optional Google privacy URL, app links next release
 - [API keys server-side](api-keys-server-side.md) — Gemini/weather/maps keys moved to external-api edge fn; done; verify on next tourist release; Maps key 2 → Supabase later
 - [Itinerary draft batch](itinerary-draft-batch.md) — all 5 steps DONE 2026-10-30; awaiting user phone test in next tourist release
 - [Owner debug session](owner-debug-session.md) — phone via adb ~1am; no release yet; open owner gaps list
@@ -21,7 +21,7 @@
 - [Final test pass](final-test-pass.md) — 2026-11-01 3-portal pass COMPLETE; 47 findings, test accounts, decisions (reviews opt 2, delete rules)
 - [Fix build plan](fix-build-plan.md) — 13-step plan; 1-10 + 12 done, Maps deferred (no budget); v1.5.0 released 2026-11-01; user testing; logo pending
 - [Auto-proceed steps](auto-proceed-steps.md) — go to next plan step without asking; still stop for deploys/user input
-- [Admin audit 2026-11-06](admin-audit-2026-11-06.md) — strict admin test + approved Option A redesign; build not started, wait for user go
+- [Admin audit 2026-11-06](admin-audit-2026-11-06.md) — Option A admin redesign (top menu, sea teal, split-photo login) BUILT 2026-11-06; bookings/revenue removed
 - [Next session plan](next-session-plan.md) — prototypes + flowcharts v1.7 done; Drive folders made 2026-11-08, user drags files manually (MCP cannot upload big files)
 - [Destination list](destination-list.md) — real list 2026-11-06 for fresh data; 14 places, corrected pins; 2 cafes lack barangay
 - [360 photo upload](pano-360-upload.md) — 2026-11-07 HQ redo live on all 38, in hq/ folder; Bayan night shot needs daytime reshoot
@@ -29,6 +29,11 @@
 - [Neat organized UI](neat-organized-ui.md) — strict rule: neat, tidy, ordered, user friendly; progress checklist after every task
 - [Cancellation cutoff plan](cancellation-cutoff-plan.md) — approved 2026-11-10, not built; cutoff replaces refundable switch, 5 fixes, 3 open questions; wait for user go
 - [Round 5 phone test](round5-phone-test-2026-11-14.md) — 2026-11-14 phone test, 10 findings with decisions, NOT built; START HERE next session
-- [Owner Home uncrowded](owner-home-uncrowded.md) — 2026-11-23 Home restructure: no crowding, day summary dominant, every guest equal; not built
+- [Owner Home uncrowded](owner-home-uncrowded.md) — Home redesign + Insights + tourist bubble bar BUILT 2026-11-23 (b13cbd8, d7dfa35); awaiting phone test
 - [Ponytail plugin](ponytail-plugin.md) — lazy-senior-dev coding plugin installed 2026-11-16, user scope; coexists with caveman
-- [Payment approach](payment-qr-decision.md) — 2026-11-25 e-wallet QR plan decided, PayMongo removal; build next session
+- [Home header + auth batch](home-header-auth-batch.md) — 2026-11-23 5-step batch: Google button/notice, live red field errors, sticky header + front card Home both apps; COMPLETE. v1.8.0 RELEASED + version.json pushed 2026-11-23; next = weather upgrade (deferred)
+- [Voice loop](voice-loop.md) — user dropped jarvis.ps1 script, uses Claude app voice mode; don't re-pitch
+- [Payment approach](payment-qr-decision.md) — GCash QR build COMPLETE 2026-11-25, untested; PayMongo fns still deployed
+- [Reply language](reply-language.md) — user mixes Bisaya/English via voice; always answer in plain simple English
+- [Admin polish 2026-11-24](admin-polish-2026-11-24.md) — auth/form parity with apps DONE (4314c94); signed-in pages untested
+- [Events feature plan](events-feature-plan.md) — PLAN APPROVED 2026-11-27, build NOT started; START HERE next session (Step 0/1)
